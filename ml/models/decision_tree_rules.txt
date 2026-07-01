@@ -1,0 +1,31 @@
+|--- avg_packet_size <= -1.47
+|   |--- dst_port_div <= -0.53
+|   |   |--- class: 1
+|   |--- dst_port_div >  -0.53
+|   |   |--- class: 1
+|--- avg_packet_size >  -1.47
+|   |--- ack_ratio <= -0.68
+|   |   |--- avg_packet_size <= 1.02
+|   |   |   |--- avg_packet_size <= 0.33
+|   |   |   |   |--- class: 4
+|   |   |   |--- avg_packet_size >  0.33
+|   |   |   |   |--- fin_ratio <= -1.01
+|   |   |   |   |   |--- class: 4
+|   |   |   |   |--- fin_ratio >  -1.01
+|   |   |   |   |   |--- class: 4
+|   |   |--- avg_packet_size >  1.02
+|   |   |   |--- avg_packet_size <= 1.24
+|   |   |   |   |--- class: 2
+|   |   |   |--- avg_packet_size >  1.24
+|   |   |   |   |--- class: 2
+|   |--- ack_ratio >  -0.68
+|   |   |--- packet_rate <= -0.73
+|   |   |   |--- src_port_div <= -1.79
+|   |   |   |   |--- class: 0
+|   |   |   |--- src_port_div >  -1.79
+|   |   |   |   |--- class: 0
+|   |   |--- packet_rate >  -0.73
+|   |   |   |--- dst_port_div <= -0.77
+|   |   |   |   |--- class: 3
+|   |   |   |--- dst_port_div >  -0.77
+|   |   |   |   |--- class: 3

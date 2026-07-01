@@ -1,0 +1,48 @@
+{
+  "Random Forest": {
+    "accuracy": 1.0,
+    "f1": 1.0,
+    "cv_f1_mean": 1.0,
+    "cv_f1_std": 0.0,
+    "latency_ms": 149.12431450000696,
+    "train_time_s": 4.483647452999996,
+    "feature_importances": {
+      "packet_rate": 0.10191015275567875,
+      "byte_rate": 0.09583030006211662,
+      "flow_duration": 0.05588603827930823,
+      "avg_packet_size": 0.15598745544368559,
+      "syn_ratio": 0.07831125693661108,
+      "ack_ratio": 0.10871506843089222,
+      "fin_ratio": 0.015119816665643743,
+      "rst_ratio": 0.001971044229538973,
+      "src_port_div": 0.08082432997912396,
+      "dst_port_div": 0.09247665882319579,
+      "inter_arrival": 0.0023617077820585514,
+      "payload_entropy": 0.06574491834624942,
+      "is_tcp": 0.04216242874076705,
+      "is_udp": 0.045080251905504305,
+      "is_icmp": 0.05761857161962562
+    },
+    "model_path": "models/random_forest.joblib",
+    "size_kb": 343.5
+  },
+  "Decision Tree": {
+    "accuracy": 0.9975,
+    "f1": 0.9974999076764085,
+    "cv_f1_mean": 0.998501346336169,
+    "cv_f1_std": 0.0008463167736578636,
+    "latency_ms": 2.592943999999875,
+    "train_time_s": 0.15562083999998322,
+    "model_path": "models/decision_tree.joblib",
+    "json_path": "models/decision_tree.json",
+    "size_kb": 4.7
+  },
+  "Isolation Forest": {
+    "accuracy": 0.9535,
+    "f1": 0.9555661729574773,
+    "latency_ms": 29.988953499980653,
+    "train_time_s": 0.5509471420000125,
+    "model_path": "models/isolation_forest.joblib",
+    "size_kb": 1272.3
+  }
+}

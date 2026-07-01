@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EdgeGuard AI — DoS Attack Detection Dashboard</title>
+  <meta name="description" content="Real-time DoS attack detection using edge machine learning. Monitor SYN Flood, UDP Flood, HTTP Flood, and Smurf attacks with sub-millisecond inference.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Icons -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+  <!-- Styles -->
+  <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       HEADER
+       ═══════════════════════════════════════════════════════════════ -->
+  <header class="header" role="banner">
+    <div class="header-left">
+      <div class="logo" aria-label="EdgeGuard AI">
+        <i class="fas fa-shield-alt" aria-hidden="true"></i>
+        <span>EdgeGuard <strong>AI</strong></span>
+      </div>
+      <div class="live-indicator" role="status" aria-live="polite">
+        <span class="pulse-dot" aria-hidden="true"></span>
+        LIVE
+      </div>
+    </div>
+
+    <div class="header-center">
+      <span class="system-status status-ok" id="systemStatus" role="status" aria-live="assertive">
+        ● SYSTEM NOMINAL
+      </span>
+    </div>
+
+    <div class="header-right" aria-label="System statistics">
+      <div class="header-stat">
+        <span class="label">UPTIME</span>
+        <span class="value" id="uptimeDisplay" aria-label="System uptime">00:00:00</span>
+      </div>
+      <div class="header-stat">
+        <span class="label">PACKETS ANALYZED</span>
+        <span class="value" id="totalPackets" aria-label="Total packets analyzed">0</span>
+      </div>
+      <div class="header-stat">
+        <span class="label">ATTACKS BLOCKED</span>
+        <span class="value danger" id="attacksBlocked" aria-label="Total attacks blocked">0</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       CONTROL BAR
+       ═══════════════════════════════════════════════════════════════ -->
+  <nav class="control-bar" aria-label="Attack simulation controls">
+    <div class="control-group">
+      <span class="control-label" id="attackLabel">Simulate:</span>
+      <button id="btnNormal"
+              class="attack-btn btn-normal active"
+              data-mode="normal"
+              onclick="app.setMode('normal')"
+              aria-pressed="true"
+              aria-labelledby="attackLabel">
+        <i class="fas fa-check-circle" aria-hidden="true"></i> Normal Traffic
+      </button>
+      <button id="btnSyn"
+              class="attack-btn btn-syn"
+              data-mode="syn"
+              onclick="app.setMode('syn')"
+              aria-pressed="false"
+              aria-labelledby="attackLabel">
+        <i class="fas fa-bolt" aria-hidden="true"></i> SYN Flood
+      </button>
+      <button id="btnUdp"
+              class="attack-btn btn-udp"
+              data-mode="udp"
+              onclick="app.setMode('udp')"
+              aria-pressed="false"
+              aria-labelledby="attackLabel">
+        <i class="fas fa-broadcast-tower" aria-hidden="true"></i> UDP Flood
+      </button>
+      <button id="btnHttp"
+              class="attack-btn btn-http"
+              data-mode="http"
+              onclick="app.setMode('http')"
+              aria-pressed="false"
+              aria-labelledby="attackLabel">
+        <i class="fas fa-globe" aria-hidden="true"></i> HTTP Flood
+      </button>
+      <button id="btnSmurf"
+              class="attack-btn btn-smurf"
+              data-mode="smurf"
+              onclick="app.setMode('smurf')"
+              aria-pressed="false"
+              aria-labelledby="attackLabel">
+        <i class="fas fa-skull" aria-hidden="true"></i> Smurf Attack
+      </button>
+    </div>
+
+    <div class="control-group">
+      <span class="control-label" id="intensityLabel-lbl">Intensity:</span>
+      <input type="range"
+             id="intensitySlider"
+             min="1" max="10" value="5"
+             class="slider"
+             aria-labelledby="intensityLabel-lbl"
+             aria-valuenow="5"
+             aria-valuemin="1"
+             aria-valuemax="10">
+      <span id="intensityLabel" class="intensity-label" aria-live="polite">5x</span>
+    </div>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       MAIN DASHBOARD GRID
+       ═══════════════════════════════════════════════════════════════ -->
+  <main class="main-grid" role="main">
+
+    <!-- ─── 1. Threat Gauge ──────────────────────────────────────── -->
+    <section class="panel panel-gauge safe-glow" id="gaugePanel" aria-label="Threat level gauge">
+      <div class="panel-header">
+        <i class="fas fa-tachometer-alt" aria-hidden="true"></i>
+        THREAT LEVEL
+      </div>
+
+      <div class="gauge-container">
+        <!-- SVG Semicircular Gauge -->
+        <svg class="gauge-svg" viewBox="0 0 200 120" role="img" aria-label="Threat level gauge">
+          <defs>
+            <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%"   style="stop-color:#00ff88"/>
+              <stop offset="50%"  style="stop-color:#ffd700"/>
+              <stop offset="100%" style="stop-color:#ff3d3d"/>
+            </linearGradient>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="2" result="blur"/>
+              <feMerge>
+                <feMergeNode in="blur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
+
+          <!-- Background track -->
+          <path d="M 20 100 A 80 80 0 0 1 180 100"
+                fill="none" stroke="rgba(30,48,80,0.8)" stroke-width="14"
+                stroke-linecap="round"/>
+
+          <!-- Filled arc (dynamic via JS) -->
+          <path id="gaugeArc"
+                d="M 20 100 A 80 80 0 0 1 180 100"
+                fill="none"
+                stroke="url(#gaugeGrad)"
+                stroke-width="14"
+                stroke-linecap="round"
+                stroke-dasharray="0 251.3"
+                filter="url(#glow)"/>
+
+          <!-- Tick marks -->
+          <g stroke="rgba(138,160,192,0.3)" stroke-width="1">
+            <line x1="20" y1="100" x2="28" y2="100"/>
+            <line x1="56" y1="43"  x2="60" y2="48"/>
+            <line x1="100" y1="20" x2="100" y2="28"/>
+            <line x1="144" y1="43" x2="140" y2="48"/>
+            <line x1="180" y1="100" x2="172" y2="100"/>
+          </g>
+
+          <!-- Needle -->
+          <line id="gaugeNeedle"
+                x1="100" y1="100" x2="100" y2="34"
+                stroke="rgba(255,255,255,0.9)"
+                stroke-width="2"
+                stroke-linecap="round"
+                transform="rotate(-90, 100, 100)"
+                style="transition: transform 0.4s ease;"/>
+          <circle cx="100" cy="100" r="5" fill="#fff" opacity="0.9"/>
+          <circle cx="100" cy="100" r="2" fill="rgba(0,212,255,0.8)"/>
+        </svg>
+
+        <div class="gauge-value" id="gaugeValue" aria-live="polite">0%</div>
+        <div class="gauge-label safe" id="gaugeLabel">SAFE</div>
+      </div>
+
+      <div class="threat-zones" aria-hidden="true">
+        <span class="zone safe">■ Safe</span>
+        <span class="zone warning">■ Warning</span>
+        <span class="zone critical">■ Critical</span>
+      </div>
+    </section>
+
+    <!-- ─── 2. Live Traffic Monitor ──────────────────────────────── -->
+    <section class="panel panel-traffic" aria-label="Live traffic monitor">
+      <div class="panel-header">
+        <i class="fas fa-chart-line" aria-hidden="true"></i>
+        LIVE TRAFFIC MONITOR
+        <span class="panel-badge" id="trafficRate" aria-live="polite">0 pkt/s</span>
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="trafficChart" aria-label="Live network traffic chart"></canvas>
+      </div>
+    </section>
+
+    <!-- ─── 3. Alert Feed ────────────────────────────────────────── -->
+    <section class="panel panel-alerts" aria-label="Threat alert feed" aria-live="polite">
+      <div class="panel-header">
+        <i class="fas fa-bell" aria-hidden="true"></i>
+        THREAT ALERTS
+        <span class="alert-count" id="alertCount" aria-label="Alert count">0</span>
+      </div>
+      <div class="alert-feed" id="alertFeed" role="log" aria-label="Threat alerts log">
+        <div class="alert-empty">
+          <i class="fas fa-shield-check" aria-hidden="true"></i>
+          <span>No threats detected</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── 4. Detection Stats ───────────────────────────────────── -->
+    <section class="panel panel-stats" aria-label="Detection statistics">
+      <div class="panel-header">
+        <i class="fas fa-chart-bar" aria-hidden="true"></i>
+        DETECTION STATS
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="statAccuracy">98.7%</div>
+          <div class="stat-label">Accuracy</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statF1">97.3%</div>
+          <div class="stat-label">F1 Score</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statLatency">0.3ms</div>
+          <div class="stat-label">Inference</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statModelSize">2.1KB</div>
+          <div class="stat-label">Model Size</div>
+        </div>
+      </div>
+
+      <div class="detection-breakdown" role="region" aria-label="Attack type breakdown">
+        <div class="breakdown-item">
+          <span>SYN Flood</span>
+          <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+            <div class="progress-fill syn" id="progressSyn"></div>
+          </div>
+          <span id="countSyn">0</span>
+        </div>
+        <div class="breakdown-item">
+          <span>UDP Flood</span>
+          <div class="progress-bar">
+            <div class="progress-fill udp" id="progressUdp"></div>
+          </div>
+          <span id="countUdp">0</span>
+        </div>
+        <div class="breakdown-item">
+          <span>HTTP Flood</span>
+          <div class="progress-bar">
+            <div class="progress-fill http" id="progressHttp"></div>
+          </div>
+          <span id="countHttp">0</span>
+        </div>
+        <div class="breakdown-item">
+          <span>Smurf</span>
+          <div class="progress-bar">
+            <div class="progress-fill smurf" id="progressSmurf"></div>
+          </div>
+          <span id="countSmurf">0</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── 5. Attack Classifier ─────────────────────────────────── -->
+    <section class="panel panel-detector" id="detectorPanel" aria-label="Attack classifier">
+      <div class="panel-header">
+        <i class="fas fa-crosshairs" aria-hidden="true"></i>
+        EDGE ML CLASSIFIER
+        <span style="margin-left:auto;font-size:9px;color:var(--text-dim);">Decision Tree · depth=5 · 2.1KB</span>
+      </div>
+
+      <div class="detector-display">
+        <div class="detected-type" id="detectedType" style="color:var(--green);" aria-live="polite">
+          NORMAL TRAFFIC
+        </div>
+
+        <div class="confidence-meter" aria-label="Confidence level">
+          <div class="confidence-fill" id="confidenceFill" style="width:95%;background:var(--green)"></div>
+        </div>
+        <div class="confidence-value">
+          Confidence: <span id="confidenceValue">95.0%</span>
+        </div>
+
+        <div style="margin-top:8px;margin-bottom:4px;font-size:9px;font-weight:700;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;">
+          Top Feature Activations
+        </div>
+        <div class="detector-features" id="detectorFeatures" aria-label="Feature importance activations">
+          <!-- Injected by app.js -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── 6. Model Comparison ──────────────────────────────────── -->
+    <section class="panel panel-models" aria-label="Edge model comparison">
+      <div class="panel-header">
+        <i class="fas fa-robot" aria-hidden="true"></i>
+        EDGE MODEL COMPARISON
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="modelChart" aria-label="Model accuracy and F1 score comparison chart"></canvas>
+      </div>
+    </section>
+
+    <!-- ─── 7. Feature Importance Radar ─────────────────────────── -->
+    <section class="panel panel-features" aria-label="Feature importance radar">
+      <div class="panel-header">
+        <i class="fas fa-spinner" aria-hidden="true"></i>
+        FEATURE IMPORTANCE
+        <span style="margin-left:auto;font-size:9px;color:var(--text-dim);">Random Forest · SHAP-derived</span>
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="featureChart" aria-label="Feature importance radar chart"></canvas>
+      </div>
+    </section>
+
+    <!-- ─── 8. Edge Device Metrics ───────────────────────────────── -->
+    <section class="panel panel-edge" aria-label="Edge device metrics">
+      <div class="panel-header">
+        <i class="fas fa-microchip" aria-hidden="true"></i>
+        EDGE DEVICE METRICS
+      </div>
+
+      <div class="edge-metrics">
+        <div class="edge-metric">
+          <span class="edge-label">CPU Usage</span>
+          <div class="edge-bar-wrap">
+            <div class="edge-bar" id="cpuBar" style="width:15%"></div>
+          </div>
+          <span class="edge-value" id="cpuValue">15%</span>
+        </div>
+        <div class="edge-metric">
+          <span class="edge-label">Memory</span>
+          <div class="edge-bar-wrap">
+            <div class="edge-bar mem" id="memBar" style="width:28%"></div>
+          </div>
+          <span class="edge-value" id="memValue">28%</span>
+        </div>
+        <div class="edge-metric">
+          <span class="edge-label">Network I/O</span>
+          <div class="edge-bar-wrap">
+            <div class="edge-bar net" id="netBar" style="width:12%"></div>
+          </div>
+          <span class="edge-value" id="netValue">12%</span>
+        </div>
+        <div class="edge-metric">
+          <span class="edge-label">Infer/sec</span>
+          <div class="edge-bar-wrap">
+            <div class="edge-bar inf" id="infBar" style="width:30%"></div>
+          </div>
+          <span class="edge-value" id="infValue">800/s</span>
+        </div>
+      </div>
+
+      <!-- Device card -->
+      <div class="edge-device-info">
+        <div class="device-chip">
+          <i class="fas fa-microchip" aria-hidden="true"></i>
+          <div>
+            <div class="device-name">Raspberry Pi 4</div>
+            <div class="device-spec">ARM Cortex-A72 · 1.8 GHz · 4 GB</div>
+          </div>
+        </div>
+        <div class="device-status online">
+          <i class="fas fa-circle" aria-hidden="true"></i> ONLINE
+        </div>
+      </div>
+
+      <!-- Traffic composition donut -->
+      <div class="traffic-breakdown">
+        <canvas id="trafficDonut" aria-label="Traffic composition doughnut chart"></canvas>
+      </div>
+    </section>
+
+  </main><!-- /.main-grid -->
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       Chart.js v4
+       ═══════════════════════════════════════════════════════════════ -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- App modules (order matters) -->
+  <script src="js/ml-inference.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/traffic-sim.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
