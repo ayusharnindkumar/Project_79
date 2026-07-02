@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "cd sentinel/frontend && npm ci",
+  "buildCommand": "cd sentinel/frontend && npm run build",
+  "outputDirectory": "sentinel/frontend/dist",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
