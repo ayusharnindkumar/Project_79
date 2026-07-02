@@ -6,6 +6,14 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
+api.interceptors.response.use((response) => {
+  const contentType = response.headers?.['content-type'] ?? ''
+  if (!contentType.includes('application/json')) {
+    throw new Error('API returned a non-JSON response')
+  }
+  return response
+})
+
 export const predictSingle  = (record)       => api.post('/predict', record)
 export const predictBatch   = (formData)     => api.post('/batch', formData, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 120000 })
 export const getStats       = ()             => api.get('/stats')
